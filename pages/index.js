@@ -1,63 +1,136 @@
+import { random, TinyColor } from '@ctrl/tinycolor'
+import { filter, map, shuffle, slice, uniq } from 'lodash'
 import Head from 'next/head'
+import React, { useEffect, useState } from 'react'
 
+// Define Primary Function of Page
 export default function Home() {
+  // set all react state to be default value
+  const [colors, setColors] = useState([])
+  const [colorsFiltered, setColorsFiltered] = useState([])
+  const [saturationFiltered, setSaturationFiltered] = useState([])
+  const [filterVal, setFilterVal] = useState('')
+  const [isChecked, setIsChecked] = useState(false)
+
+  // Define Function for Getting Random Color
+  const getRandomColor = () => {
+    return random().toHexString()
+  }
+
+  // Define Function for Getting Small Random Number (2 to 5)
+  const getRandomNumber = () => {
+    return Math.floor((Math.random() * (5 + 1)) + 2)
+  }
+
+  // Define Function for Getting Big Random Number (9999 to 999999)
+  const getRandomNumbers = () => {
+    return Math.floor((Math.random() * (999999 + 1)) + 9999)
+  }
+
+  // Define Function for Generate Color and Reset Filter Color & Dakrness
+  const generateColors = () => {
+    const _colors = []
+    for (let x = 1; x <= 40; x++) {
+      const randomColor = getRandomColor()
+      for (let y = 1; y <= getRandomNumber(); y++) {
+        _colors.push(randomColor)
+      }
+    }
+
+    // Set all state to default value 
+    setFilterVal('All')
+    setIsChecked(false)
+    setSaturationFiltered(shuffle(slice(_colors, 0, 40)))
+    setColorsFiltered(shuffle(slice(_colors, 0, 40)))
+    setColors(shuffle(slice(_colors, 0, 40)))
+  }
+
+  // Execute function in first load page
+  useEffect(() => {
+    generateColors()
+  }, [])
+
+  // Define JSX Component for Color Box Gallery
+  const ColorsComp = () => (<>
+    {map(saturationFiltered, (item) => {
+      return (<div key={getRandomNumbers().toString() + item} style={{ width: '150px', height: '150px', margin: '10px', backgroundColor: item, border: '10px solid #cacaca' }}></div>)
+    })}
+  </>)
+
+  // Define JSX Component for Color Filter Select 
+  const FilterColor = () => (
+    <div key="divSelectFilter" style={{ display: 'block' }}>
+      Category : <select key="selectFilter" value={filterVal} onChange={handleChangeColorFilter} style={{ width: '150px', backgroundColor: (filterVal !== 'All') ? filterVal : '#FFFFFF' }}>
+        <option key={`AllFilterOption`} style={{ backgroundColor: '#FFFFFF', color: '#333333' }} value="All">All</option>
+        {map(uniq(colors), (item) => {
+          return (
+            <option style={{ backgroundColor: item, color: item }} key={'option' + getRandomNumbers().toString() + item} value={item}>
+              &nbsp;
+            </option>
+          )
+        })}
+      </select>
+    </div>
+  )
+
+  // Define JSX Component for Saturation Filter Checkbox, show dark color when checked
+  const FilterSaturation = () => (
+    <div style={{ display: 'block' }}>
+      Saturation (Darker) : <input type="checkbox" checked={isChecked} onChange={handleChangeCheckbox} />
+    </div>
+  )
+
+  // Define Function for Handle Change Select Option Color
+  const handleChangeColorFilter = (e) => {
+    // define var colorSelected from selected value
+    const colorSelected = e.target.value
+    setFilterVal(colorSelected)
+    if (colorSelected === 'All') {
+      // Set Filter state to Show All Color
+      setColorsFiltered(colors)
+      setSaturationFiltered(colors)
+      setIsChecked(false)
+    } else {
+      // Set Filter state to selected value
+      setColorsFiltered(filter(colors, o => o === colorSelected))
+      setSaturationFiltered(filter(colors, o => o === colorSelected))
+      setIsChecked(false)
+    }
+  }
+
+  // Define Function for Handle Change Checkbox Saturation (Darker Color) filter
+  const handleChangeCheckbox = () => {
+    if (!isChecked) {
+      setSaturationFiltered(filter(colorsFiltered, o => new TinyColor(o).isDark() && o))
+    } else {
+      setSaturationFiltered(colorsFiltered)
+    }
+    setIsChecked(!isChecked)
+  }
+
   return (
     <div className="container">
       <Head>
-        <title>Create Next App</title>
+        <title>App - Dewa</title>
         <link rel="icon" href="/favicon.ico" />
       </Head>
 
       <main>
         <h1 className="title">
-          Welcome to <a href="https://nextjs.org">Next.js!</a>
+          Dewa Danu Brata Colours Gallery
         </h1>
 
-        <p className="description">
-          Get started by editing <code>pages/index.js</code>
-        </p>
+        <br /><br />
+        <button onClick={() => generateColors()}>Reset Random Color</button>
+        <br />
+
+        <FilterColor />
+        <FilterSaturation />
 
         <div className="grid">
-          <a href="https://nextjs.org/docs" className="card">
-            <h3>Documentation &rarr;</h3>
-            <p>Find in-depth information about Next.js features and API.</p>
-          </a>
-
-          <a href="https://nextjs.org/learn" className="card">
-            <h3>Learn &rarr;</h3>
-            <p>Learn about Next.js in an interactive course with quizzes!</p>
-          </a>
-
-          <a
-            href="https://github.com/vercel/next.js/tree/master/examples"
-            className="card"
-          >
-            <h3>Examples &rarr;</h3>
-            <p>Discover and deploy boilerplate example Next.js projects.</p>
-          </a>
-
-          <a
-            href="https://vercel.com/import?filter=next.js&utm_source=create-next-app&utm_medium=default-template&utm_campaign=create-next-app"
-            className="card"
-          >
-            <h3>Deploy &rarr;</h3>
-            <p>
-              Instantly deploy your Next.js site to a public URL with Vercel.
-            </p>
-          </a>
+          <ColorsComp />
         </div>
       </main>
-
-      <footer>
-        <a
-          href="https://vercel.com?utm_source=create-next-app&utm_medium=default-template&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          Powered by{' '}
-          <img src="/vercel.svg" alt="Vercel Logo" className="logo" />
-        </a>
-      </footer>
 
       <style jsx>{`
         .container {
@@ -144,7 +217,7 @@ export default function Home() {
           justify-content: center;
           flex-wrap: wrap;
 
-          max-width: 800px;
+          max-width: 1000px;
           margin-top: 3rem;
         }
 
